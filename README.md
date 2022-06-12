@@ -1,0 +1,3 @@
+aws iot-core 연결 명령어
+
+python3 moistureSensor.py --endpoint a21xxb3zewrt7o-ats.iot.ca-central-1.amazonaws.com --rootCA /home/pi/certs/AmazonRootCA1.pem --cert /home/pi/certs/4bdbfedec4016b060ef7698adf53fa45e407057c602ae865889e24025e1c05bc-certificate.pem.crt --key /home/pi/certs/4bdbfedec4016b060ef7698adf53fa45e407057c602ae865889e24025e1c05bc-private.pem.key --thingName RaspberryPi --clientId RaspberryPi
