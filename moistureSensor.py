@@ -13,47 +13,46 @@ from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTShadowClient
 import logging
 import json
 import argparse
-import busio
+# import busio
 
-led = LED(19)
+led_red = LED(19)
 led_green = LED(21)
 
 # Function called when a shadow is updated
 def customShadowCallback_Update(payload, responseStatus, token):
 
     # Display status and data from update request
-    # if responseStatus == "timeout":
-    #     print("Update request " + token + " time out!")
+    if responseStatus == "timeout":
+        print("Update request " + token + " time out!")
 
-    # if responseStatus == "accepted":
-    #     payloadDict = json.loads(payload)
-    #     print("~~~~~~~~~~~~~~~~~~~~~~~")
-    #     print("Update request with token: " + token + " accepted!")
+    if responseStatus == "accepted":
+        payloadDict = json.loads(payload)
+        print("~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Update request with token: " + token + " accepted!")
 
-    #     # print(payloadDict)
-    #     print("moisture: " + str(payloadDict["state"]["reported"]["moisture"]))
-    #     # print("temperature: " + str(payloadDict["state"]["reported"]["temp"]))
-    #     print("~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+        # print(payloadDict)
+        print("moisture: " + str(payloadDict["state"]["reported"]["moisture"]))
+        # print("temperature: " + str(payloadDict["state"]["reported"]["temp"]))
+        print("~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 
-    # if responseStatus == "rejected":
-    #     print("Update request " + token + " rejected!")
-    pass
+    if responseStatus == "rejected":
+        print("Update request " + token + " rejected!")    
+        
 
 # Function called when a shadow is deleted
 def customShadowCallback_Delete(payload, responseStatus, token):
 
      # Display status and data from delete request
-    # if responseStatus == "timeout":
-    #     print("Delete request " + token + " time out!")
+    if responseStatus == "timeout":
+        print("Delete request " + token + " time out!")
 
-    # if responseStatus == "accepted":
-    #     print("~~~~~~~~~~~~~~~~~~~~~~~")
-    #     print("Delete request with token: " + token + " accepted!")
-    #     print("~~~~~~~~~~~~~~~~~~~~~~~\n\n")
+    if responseStatus == "accepted":
+        print("~~~~~~~~~~~~~~~~~~~~~~~")
+        print("Delete request with token: " + token + " accepted!")
+        print("~~~~~~~~~~~~~~~~~~~~~~~\n\n")
 
-    # if responseStatus == "rejected":
-    #     print("Delete request " + token + " rejected!")
-    pass
+    if responseStatus == "rejected":
+        print("Delete request " + token + " rejected!")   
 
 
 # Read in command-line parameters
@@ -110,8 +109,6 @@ myAWSIoTMQTTShadowClient.configureMQTTOperationTimeout(5) # 5 sec
 # Initialize Raspberry Pi's I2C interface
 # i2c_bus = busio.I2C(SCL, SDA)
 
-# Intialize SeeSaw, Adafruit's Circuit Python library
-sensor = adafruit_dht.DHT11(board.D18)
 
 # Connect to AWS IoT
 myAWSIoTMQTTShadowClient.connect()
@@ -122,60 +119,45 @@ deviceShadowHandler = myAWSIoTMQTTShadowClient.createShadowHandlerWithName(args.
 # Delete current shadow JSON doc
 deviceShadowHandler.shadowDelete(customShadowCallback_Delete, 5)
 
-# while True:
-#     moistureLevel = sensor.humidity     
-#     print("현재 습도:{}%".format(moistureLevel))
-#     print("-------------------------------------------------")    
-#     sleep(3)
 
-humidity_machine = False
-# Read data from moisture sensor and update shadow
+sensor = adafruit_dht.DHT11(board.D18)      # DHT11센서 18번포트로 사용
+humidity_machine = False                    # 제습기 상태 off
+
 while True:
     
-    try:
-        # read moisture level through capacitive touch pad
-        moistureLevel = sensor.humidity     
+    try:        
+        moistureLevel = sensor.humidity     # 온/습도센서에서 습도 측정
         
-        if humidity_machine:
-            if moistureLevel <= 45:
+        if humidity_machine:                # 제습기 가동중
+            if moistureLevel <= 45:         # 습도 45% 이하로 떨어지면 제습기 가동 종료
                 humidity_machine = False
                 led_green.off()
                 print("습도조절 완료")         
                 print("-------------------------------------------------")   
                 sleep(5)          
             continue
-        if moistureLevel >= 55:
-            humidity_machine = True
+
+        if moistureLevel >= 55:             # 습도 55% 이상 시
+            humidity_machine = True         # 제습기 가동 시작
             # # Display moisture
             print("현재 습도:{}%".format(moistureLevel))
             print("옷장습도가 높습니다. 제습기를 가동합니다") 
             print("-------------------------------------------------") 
         
             # Create message payload
-            payload = {"state":{"reported":{"moisture":str(moistureLevel)}}}
-            # payload = {"옷장습도:{}, 습도가 높습니다. 제습기를 가동합니다%".fromat(moistureLevel)}
+            payload = {"state":{"reported":{"moisture":str(moistureLevel)}}}            
     
             # Update shadow
             deviceShadowHandler.shadowUpdate(json.dumps(payload), customShadowCallback_Update, 5)
                            
-            # while True:                
-            led.on()
-            sleep(0.2)
-            led.off()
-            sleep(0.2)
-            led.on()
-            sleep(0.2)
-            led.off()
-            sleep(0.2)
-            led.on()
-            sleep(0.2)
-            led.off()
-            sleep(0.2)
-            led.on()
-            sleep(0.2)
-            led.off()
+            # 붉은 LED 점멸 후 녹색 LED 점등
+            for i in range(4):
+                led_red.on()
+                sleep(0.2)
+                led_red.off()
+                sleep(0.2)            
 
-            sleep(2)
+            sleep(1.5)
             led_green.on()
             sleep(5)
       
